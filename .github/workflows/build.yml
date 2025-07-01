@@ -2,53 +2,48 @@ name: Build Kivy APK
 
 on:
   push:
-    paths:
-      - '**.py'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip
-          pip install --upgrade pip
-          pip install buildozer Cython
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip zip unzip openjdk-17-jdk
+        pip install --upgrade pip
+        pip install buildozer cython
 
-      - name: Create buildozer.spec file
-        run: buildozer init
+    - name: Setup Android SDK & Accept Licenses
+      run: |
+        mkdir -p ~/.android
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
 
-      - name: Update buildozer.spec
-        run: |
-          sed -i 's/title = .*/title = To-Do List/' buildozer.spec
-          sed -i 's/package.name = .*/package.name = todolist/' buildozer.spec
-          sed -i 's/package.domain = .*/package.domain = org.example/' buildozer.spec
-          sed -i 's/source.main = .*/source.main = mainmob.py/' buildozer.spec
-          sed -i 's/requirements = .*/requirements = python3,kivy/' buildozer.spec
-          sed -i 's/# android.build_tools_version = .*/android.build_tools_version = 34.0.0/' buildozer.spec
-          sed -i 's/# android.api = .*/android.api = 34/' buildozer.spec
+        yes | sdkmanager --licenses || true
+        yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || true
 
-      - name: Accept Android SDK licenses
-        run: |
-          mkdir -p $HOME/.android
-          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $HOME/.android/repositories.cfg
-          yes | sdkmanager --licenses || true
+    - name: Initialize Buildozer spec
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+        fi
 
-      - name: Build APK
-        run: buildozer android debug
+    - name: Build APK
+      run: |
+        buildozer android clean
+        buildozer android debug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ToDoList-APK
-          path: bin/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-kivy-apk
+        path: bin/*.apk
