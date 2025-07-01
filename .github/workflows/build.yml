@@ -17,20 +17,28 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install system dependencies (Java, SDK, AIDL)
         run: |
           sudo apt update
-          sudo apt install -y libffi-dev build-essential git zip unzip openjdk-17-jdk python3-pip
+          sudo apt install -y build-essential ccache libffi-dev libssl-dev \
+              libsqlite3-dev zlib1g-dev libjpeg-dev libandroid-tools adb unzip zip \
+              openjdk-17-jdk wget python3-pip
+
+          echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> $GITHUB_ENV
+
+      - name: Install Buildozer & Cython
+        run: |
           pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          pip install buildozer cython
 
       - name: Rename mainmob.py to main.py
         run: mv mainmob.py main.py
 
-      - name: Generate buildozer.spec
+      - name: Create buildozer.spec
         run: buildozer init
 
-      - name: Fix buildozer.spec for Kivy app
+      - name: Modify buildozer.spec
         run: |
           sed -i 's/title = .*/title = ToDoApp/' buildozer.spec
           sed -i 's/source.include_exts = .*/source.include_exts = py,png,jpg,kv,atlas/' buildozer.spec
