@@ -2,16 +2,22 @@ name: Build Kivy APK
 
 on:
   push:
+    paths:
+      - '**.py'
+      - '**.kv'
+      - '**/buildozer.spec'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
@@ -19,38 +25,30 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip
         pip install --upgrade pip
         pip install buildozer cython
 
-    - name: Accept licenses and install Android build tools
-      run: |
-        mkdir -p ~/.android
-        echo "### User Sources for Android SDK Manager" > ~/.android/repositories.cfg
-        yes | sdkmanager --licenses || true
-        yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" || true
-
-   - name: Set Buildozer Android SDK path manually
-  run: |
-    mkdir -p $HOME/.buildozer/android/platform
-    rm -rf $HOME/.buildozer/android/platform/android-sdk
-    ln -s $HOME/Android/Sdk $HOME/.buildozer/android/platform/android-sdk
-    echo "ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-    echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-
-    - name: Create buildozer.spec if not exists
+    - name: Create buildozer.spec if missing
       run: |
         if [ ! -f buildozer.spec ]; then
           buildozer init
+          sed -i 's/main.py/mainmob.py/g' buildozer.spec
         fi
+
+    - name: Accept Android SDK Licenses
+      run: |
+        mkdir -p ~/.android
+        echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg || true
+        yes | sdkmanager --licenses || true
 
     - name: Build APK
       run: |
+        buildozer android clean
         buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: kivy-apk
+        name: ToDoListApp
         path: bin/*.apk
-
