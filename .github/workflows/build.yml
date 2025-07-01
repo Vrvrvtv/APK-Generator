@@ -3,11 +3,12 @@ name: Build Kivy APK
 on:
   push:
     paths:
-      - 'mainmob.py'
+      - '**.py'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -15,35 +16,33 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: Install system dependencies (Java, SDK, AIDL)
+      - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential ccache libffi-dev libssl-dev \
-              libsqlite3-dev zlib1g-dev libjpeg-dev libandroid-tools adb unzip zip \
-              openjdk-17-jdk wget python3-pip
-
-          echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-          echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> $GITHUB_ENV
-
-      - name: Install Buildozer & Cython
-        run: |
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip
           pip install --upgrade pip
-          pip install buildozer cython
+          pip install buildozer Cython
 
-      - name: Rename mainmob.py to main.py
-        run: mv mainmob.py main.py
-
-      - name: Create buildozer.spec
+      - name: Create buildozer.spec file
         run: buildozer init
 
-      - name: Modify buildozer.spec
+      - name: Update buildozer.spec
         run: |
-          sed -i 's/title = .*/title = ToDoApp/' buildozer.spec
-          sed -i 's/source.include_exts = .*/source.include_exts = py,png,jpg,kv,atlas/' buildozer.spec
-          sed -i 's/^# *android\\.logcat_filters = .*/android.logcat_filters = *:S python:D/' buildozer.spec
-          sed -i 's/^# *requirements = .*/requirements = python3,kivy/' buildozer.spec
+          sed -i 's/title = .*/title = To-Do List/' buildozer.spec
+          sed -i 's/package.name = .*/package.name = todolist/' buildozer.spec
+          sed -i 's/package.domain = .*/package.domain = org.example/' buildozer.spec
+          sed -i 's/source.main = .*/source.main = mainmob.py/' buildozer.spec
+          sed -i 's/requirements = .*/requirements = python3,kivy/' buildozer.spec
+          sed -i 's/# android.build_tools_version = .*/android.build_tools_version = 34.0.0/' buildozer.spec
+          sed -i 's/# android.api = .*/android.api = 34/' buildozer.spec
+
+      - name: Accept Android SDK licenses
+        run: |
+          mkdir -p $HOME/.android
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $HOME/.android/repositories.cfg
+          yes | sdkmanager --licenses || true
 
       - name: Build APK
         run: buildozer android debug
@@ -51,5 +50,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: todo-app
+          name: ToDoList-APK
           path: bin/*.apk
