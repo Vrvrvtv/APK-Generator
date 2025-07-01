@@ -27,7 +27,6 @@ jobs:
       run: |
         mkdir -p ~/.android
         echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
-
         yes | sdkmanager --licenses || true
         yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || true
 
@@ -39,7 +38,6 @@ jobs:
 
     - name: Build APK
       run: |
-        buildozer android clean
         buildozer android debug
 
     - name: Upload APK
