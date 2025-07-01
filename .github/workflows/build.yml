@@ -1,0 +1,49 @@
+name: Build Kivy APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip
+        pip install buildozer cython
+
+    - name: Auto create buildozer.spec and main.py
+      run: |
+        cp mainmob.py main.py
+        buildozer init
+
+    - name: Modify buildozer.spec for APK
+      run: |
+        sed -i 's/^title = .*/title = ToDoApp/' buildozer.spec
+        sed -i 's/^package.name = .*/package.name = todoapk/' buildozer.spec
+        sed -i 's/^package.domain = .*/package.domain = org.bhaigpt/' buildozer.spec
+        sed -i 's/^source.include_exts = .*/source.include_exts = py,kv,png,jpg,ttf/' buildozer.spec
+        sed -i 's/^# android.permissions = INTERNET/android.permissions = INTERNET/' buildozer.spec
+        sed -i 's/^# android.api = 33/android.api = 33/' buildozer.spec
+        sed -i 's/^# android.ndk = 25b/android.ndk = 25b/' buildozer.spec
+        sed -i 's/^# android.build_tools = 34.0.0/android.build_tools = 34.0.0/' buildozer.spec
+        sed -i 's/^# android.sdk = 24/android.sdk = 24/' buildozer.spec
+
+    - name: Build APK
+      run: |
+        buildozer android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: todo-app-apk
+        path: bin/*.apk
