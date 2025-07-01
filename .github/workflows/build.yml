@@ -8,29 +8,30 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.10
+        python-version: "3.10"
 
     - name: Install dependencies
       run: |
         sudo apt update
         sudo apt install -y zip unzip openjdk-17-jdk python3-pip
-        pip install buildozer cython
+        pip install --upgrade pip
+        pip install cython buildozer
 
-    - name: Auto create buildozer.spec and main.py
+    - name: Create buildozer.spec and main.py
       run: |
         cp mainmob.py main.py
         buildozer init
 
-    - name: Modify buildozer.spec for APK
+    - name: Configure buildozer.spec
       run: |
-        sed -i 's/^title = .*/title = ToDoApp/' buildozer.spec
-        sed -i 's/^package.name = .*/package.name = todoapk/' buildozer.spec
-        sed -i 's/^package.domain = .*/package.domain = org.bhaigpt/' buildozer.spec
+        sed -i 's/^title = .*/title = TypeKaroApp/' buildozer.spec
+        sed -i 's/^package.name = .*/package.name = typekaro/' buildozer.spec
+        sed -i 's/^package.domain = .*/package.domain = org.type.karo/' buildozer.spec
         sed -i 's/^source.include_exts = .*/source.include_exts = py,kv,png,jpg,ttf/' buildozer.spec
         sed -i 's/^# android.permissions = INTERNET/android.permissions = INTERNET/' buildozer.spec
         sed -i 's/^# android.api = 33/android.api = 33/' buildozer.spec
@@ -42,8 +43,8 @@ jobs:
       run: |
         buildozer android debug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: todo-app-apk
+        name: typekaro-apk
         path: bin/*.apk
